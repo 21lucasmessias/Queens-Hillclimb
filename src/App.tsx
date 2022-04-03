@@ -1,5 +1,7 @@
+import { Text } from '@chakra-ui/react'
+
 function App() {
-  return (<h1>Hello World</h1>)
+  return <Text>Hello World</Text>
 }
 
 export default App
