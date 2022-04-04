@@ -1,24 +1,17 @@
 import { Flex, Grid, GridItem } from '@chakra-ui/react'
-
-type Position = {
-  x: number
-  y: number
-}
-
-type Square = {
-  type: 'empty' | 'queen'
-  pos: Position
-}
+import { Position, Queen, Square } from '../Types'
 
 interface BoardProps {
   numberOfQueens: number
-  columns: Array<Array<Square>>
-  handleSquarePressed: ({ x, y }: Position) => void
+  rows: Array<Array<Square>>
+  hasQueenInSquare: ({ row, col }: Position) => boolean
+  handleSquarePressed: ({ row, col }: Position) => void
 }
 
 export function Board({
   numberOfQueens,
-  columns,
+  rows,
+  hasQueenInSquare,
   handleSquarePressed,
 }: BoardProps) {
   return (
@@ -28,19 +21,21 @@ export function Board({
         gap={2}
         marginX="auto"
       >
-        {columns.map((column) =>
-          column.map((square) => (
+        {rows.map((row) =>
+          row.map((square) => (
             <GridItem
-              key={`${square.pos.x}-${square.pos.y}`}
+              key={`${square.pos.row}-${square.pos.col}`}
               h={'80px'}
               backgroundColor={
-                square.type === 'empty' ? 'gray.600' : 'purple.600'
+                hasQueenInSquare({ row: square.pos.row, col: square.pos.col })
+                  ? 'purple.600'
+                  : 'gray.600'
               }
               cursor={'pointer'}
               onClick={() => {
                 handleSquarePressed(square.pos)
               }}
-            />
+            >{`${square.pos.row}-${square.pos.col}`}</GridItem>
           ))
         )}
       </Grid>

@@ -1,92 +1,90 @@
-import {
-  Box,
-  Button,
-  Flex,
-  Grid,
-  GridItem,
-  Input,
-  InputGroup,
-  Text,
-} from '@chakra-ui/react'
+import { Flex } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 import { Board } from './components/Board'
 import { Header } from './components/Header'
+import { useHillClimb } from './HillClimb'
 
-type Position = {
-  x: number
-  y: number
-}
-
-type Square = {
-  type: 'empty' | 'queen'
-  pos: Position
-}
+import { Position, Queen, Square } from './Types'
 
 function App() {
   const [numberOfQueens, setNumberOfQueens] = useState<number>(8)
   const [numberOfAllocatedQueens, setNumberOfAllocatedQueens] =
     useState<number>(0)
 
-  const [columns, setColumns] = useState<Array<Array<Square>>>([])
+  const [rows, setRows] = useState<Array<Array<Square>>>([])
+
+  const [queens, setQueens] = useState<Array<Queen>>([])
+
+  const { execute, handleMoveQueen } = useHillClimb({
+    queens: queens,
+    numberOfQueens: numberOfQueens,
+    numberOfAllocatedQueens: numberOfAllocatedQueens,
+    setQueens: setQueens,
+  })
 
   useEffect(() => {
     if (typeof numberOfQueens === 'number' && numberOfQueens > 0) {
-      const newColumns: Array<Array<Square>> = []
+      const newLines: Array<Array<Square>> = []
 
-      for (let x = 0; x < numberOfQueens; x++) {
-        newColumns.push([])
+      for (let row = 0; row < numberOfQueens; row++) {
+        newLines.push([])
 
-        for (let y = 0; y < numberOfQueens; y++) {
+        for (let col = 0; col < numberOfQueens; col++) {
           const newSquare: Square = {
-            type: 'empty',
             pos: {
-              x,
-              y,
+              row,
+              col,
             },
           }
 
-          newColumns[x].push(newSquare)
+          newLines[row].push(newSquare)
         }
       }
 
-      setColumns(newColumns)
+      setRows(newLines)
       setNumberOfAllocatedQueens(0)
+      setQueens([])
     }
   }, [numberOfQueens])
 
-  const handleAllocateQueen = ({ x, y }: Position) => {
-    if (numberOfAllocatedQueens < numberOfQueens) {
-      const newColumns: Square[][] = [...columns]
+  const hasQueenInColumn = (col: number) => {
+    return queens.some((queen) => queen.pos.col === col)
+  }
 
-      newColumns[x][y] = {
-        ...newColumns[x][y],
-        type: 'queen',
+  const handleAllocateQueen = ({ col, row }: Position) => {
+    if (numberOfAllocatedQueens < numberOfQueens && !hasQueenInColumn(col)) {
+      const newQueen: Queen = {
+        pos: {
+          col,
+          row,
+        },
       }
 
+      setQueens([...queens, newQueen])
       setNumberOfAllocatedQueens(numberOfAllocatedQueens + 1)
-
-      setColumns(newColumns)
     }
   }
 
-  const handleRemoveQueen = ({ x, y }: Position) => {
-    const newColumns: Square[][] = [...columns]
+  const handleRemoveQueen = ({ row, col }: Position) => {
+    const newQueens = queens.filter((queen) => {
+      return !(queen.pos.col === col && queen.pos.row === row)
+    })
 
-    newColumns[x][y] = {
-      ...newColumns[x][y],
-      type: 'empty',
-    }
-
+    setQueens(newQueens)
     setNumberOfAllocatedQueens(numberOfAllocatedQueens - 1)
-
-    setColumns(newColumns)
   }
 
-  const handleSquarePressed = ({ x, y }: Position) => {
-    if (columns[x][y].type === 'empty') {
-      handleAllocateQueen({ x, y })
+  const hasQueenInSquare = ({ row, col }: Position) => {
+    return queens.some(
+      (queen) => queen.pos.row === row && queen.pos.col === col
+    )
+  }
+
+  const handleSquarePressed = (position: Position) => {
+    if (hasQueenInSquare(position)) {
+      handleRemoveQueen(position)
     } else {
-      handleRemoveQueen({ x, y })
+      handleAllocateQueen(position)
     }
   }
 
@@ -110,10 +108,12 @@ function App() {
         <Header
           numberOfQueens={numberOfQueens}
           setNumberOfQueens={setNumberOfQueens}
+          execute={execute}
         />
 
         <Board
-          columns={columns}
+          rows={rows}
+          hasQueenInSquare={hasQueenInSquare}
           handleSquarePressed={handleSquarePressed}
           numberOfQueens={numberOfQueens}
         />

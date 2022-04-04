@@ -10,9 +10,14 @@ import {
 interface HeaderProps {
   numberOfQueens: number
   setNumberOfQueens: React.Dispatch<React.SetStateAction<number>>
+  execute: () => void
 }
 
-export function Header({ numberOfQueens, setNumberOfQueens }: HeaderProps) {
+export function Header({
+  numberOfQueens,
+  setNumberOfQueens,
+  execute,
+}: HeaderProps) {
   return (
     <Flex direction={'column'} w="100%" gap={4}>
       <Heading color={'white'}>Queens Hill Climbing</Heading>
@@ -29,8 +34,9 @@ export function Header({ numberOfQueens, setNumberOfQueens }: HeaderProps) {
             color="white"
           />
         </InputGroup>
-
-        <Button colorScheme={'purple'}>Hill-Climb</Button>
+        <Button colorScheme={'purple'} onClick={execute}>
+          Hill-Climb
+        </Button>
       </Flex>
     </Flex>
   )
