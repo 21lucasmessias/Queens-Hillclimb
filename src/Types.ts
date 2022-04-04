@@ -9,4 +9,5 @@ export type Square = {
 
 export type Queen = {
   pos: Position
+  attackedBy: number
 }

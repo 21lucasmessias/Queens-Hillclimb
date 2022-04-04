@@ -1,5 +1,5 @@
 import { Flex } from '@chakra-ui/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Board } from './components/Board'
 import { Header } from './components/Header'
 import { useHillClimb } from './HillClimb'
@@ -15,9 +15,8 @@ function App() {
 
   const [queens, setQueens] = useState<Array<Queen>>([])
 
-  const { execute, handleMoveQueen } = useHillClimb({
+  const { execute } = useHillClimb({
     queens: queens,
-    numberOfQueens: numberOfQueens,
     numberOfAllocatedQueens: numberOfAllocatedQueens,
     setQueens: setQueens,
   })
@@ -51,13 +50,14 @@ function App() {
     return queens.some((queen) => queen.pos.col === col)
   }
 
-  const handleAllocateQueen = ({ col, row }: Position) => {
+  const allocateQueen = ({ col, row }: Position) => {
     if (numberOfAllocatedQueens < numberOfQueens && !hasQueenInColumn(col)) {
       const newQueen: Queen = {
         pos: {
           col,
           row,
         },
+        attackedBy: 0,
       }
 
       setQueens([...queens, newQueen])
@@ -65,7 +65,7 @@ function App() {
     }
   }
 
-  const handleRemoveQueen = ({ row, col }: Position) => {
+  const removeQueen = ({ row, col }: Position) => {
     const newQueens = queens.filter((queen) => {
       return !(queen.pos.col === col && queen.pos.row === row)
     })
@@ -82,9 +82,9 @@ function App() {
 
   const handleSquarePressed = (position: Position) => {
     if (hasQueenInSquare(position)) {
-      handleRemoveQueen(position)
+      removeQueen(position)
     } else {
-      handleAllocateQueen(position)
+      allocateQueen(position)
     }
   }
 
