@@ -1,65 +1,139 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { OptimizationAlgorithm, OptimizationAlgorithmProps } from './App'
 
-import { Queen } from './Types'
+import { Position, Queen } from './Types'
 
-interface HillClimbProps {
-  queens: Array<Queen>
-  numberOfAllocatedQueens: number
-  setQueens: React.Dispatch<React.SetStateAction<Queen[]>>
-}
-
-export const useHillClimb = ({ queens, setQueens }: HillClimbProps) => {
-  console.log({ queens })
-
-  const calculateAttackedBy = (newQueens: Array<Queen>) => {
-    newQueens.forEach((queen) => {
-      const { col: curCol, row: curRow } = queen.pos
+export const useHillClimb: (
+  props: OptimizationAlgorithmProps
+) => OptimizationAlgorithm = ({ queens: initialQueens, setQueens }) => {
+  const calculateAttackedBy = (queens: Array<Queen>): Array<Queen> => {
+    const newQueens = queens.map((queen) => {
+      const newQueen = { ...queen }
 
       var count = 0
 
-      newQueens.forEach((_queen) => {
-        const { col, row } = _queen.pos
+      for (let i = 0; i < queens.length; i++) {
+        const { col, row } = queens[i].pos
 
-        if (col === curCol) {
-          return
+        if (col === newQueen.pos.col) {
+          continue
         }
 
-        if (row === curRow) {
+        if (row === newQueen.pos.row) {
           count++
-          return
+          continue
         }
 
-        if (Math.abs(row - curRow) === Math.abs(col - curCol)) {
+        if (
+          Math.abs(row - newQueen.pos.row) === Math.abs(col - newQueen.pos.col)
+        ) {
           count++
         }
-      })
+      }
 
-      queen.attackedBy = count
+      newQueen.attackedBy = count
+
+      return newQueen
     })
 
     return newQueens
   }
 
-  const moveQueen = (column: number) => {
-    var newQueens: Array<Queen> = [...queens]
-    const queen = newQueens.find((_queen) => _queen.pos.col === column)
+  const moveQueen = (queens: Array<Queen>, column: number): Array<Queen> => {
+    var newQueens = queens.map((queen) => {
+      const newQueen = { ...queen }
+      if (newQueen.pos.col === column) {
+        if (newQueen.pos.row + 1 === queens.length) {
+          newQueen.pos.row = 0
+        } else {
+          newQueen.pos.row = newQueen.pos.row + 1
+        }
+      }
 
-    if (!queen) {
-      return
-    }
-
-    if (queen.pos.row + 1 === 8) {
-      queen.pos.row = 0
-    } else {
-      queen.pos.row = queen.pos.row + 1
-    }
+      return newQueen
+    })
 
     newQueens = calculateAttackedBy(newQueens)
-    setQueens(newQueens)
+
+    return newQueens
   }
 
-  const execute = () => {
-    moveQueen(1)
+  const moveQueenToBestPosition = (
+    queens: Array<Queen>,
+    column: number,
+    position: Position
+  ): Array<Queen> => {
+    const newQueens = queens.map((queen) => {
+      const newQueen = { ...queen }
+      if (queen.pos.col === column) {
+        newQueen.pos = position
+      }
+
+      return newQueen
+    })
+
+    return newQueens
+  }
+
+  const delay = (delay: number) => {
+    return new Promise(function (resolve) {
+      setTimeout(resolve, delay)
+    })
+  }
+
+  const updateBoard = async (queens: Array<Queen>) => {
+    setQueens(queens)
+  }
+
+  const execute = async () => {
+    let queens = calculateAttackedBy(initialQueens)
+    let totalQueensAttacked = queens.reduce(
+      (acc, queen) => acc + queen.attackedBy,
+      0
+    )
+
+    let column = 0
+
+    let maxInteractions = 10
+
+    while (totalQueensAttacked > 0 && maxInteractions > 0) {
+      let bestPositionForQueen = queens[column].pos
+
+      for (let i = 0; i < queens.length; i++) {
+        queens = moveQueen(queens, column)
+
+        updateBoard(queens)
+        await delay(10)
+
+        let newTotalQueensAttacked = queens.reduce(
+          (acc, queen) => acc + queen.attackedBy,
+          0
+        )
+
+        if (newTotalQueensAttacked <= totalQueensAttacked) {
+          bestPositionForQueen = { ...queens[column].pos }
+          totalQueensAttacked = newTotalQueensAttacked
+        }
+      }
+
+      queens = moveQueenToBestPosition(queens, column, bestPositionForQueen)
+      totalQueensAttacked = queens.reduce(
+        (acc, queen) => acc + queen.attackedBy,
+        0
+      )
+
+      column = column + 1
+      if (column === queens.length) {
+        column = 0
+      }
+
+      maxInteractions = maxInteractions - 1
+
+      updateBoard(queens)
+      await delay(10)
+    }
+
+    //console.log({ totalQueensAttacked, queens })
   }
 
   const value = useMemo(() => {

@@ -1,10 +1,18 @@
 import { Flex } from '@chakra-ui/react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Board } from './components/Board'
 import { Header } from './components/Header'
 import { useHillClimb } from './HillClimb'
 
 import { Position, Queen, Square } from './Types'
+
+export interface OptimizationAlgorithmProps {
+  queens: Array<Queen>
+  setQueens: React.Dispatch<React.SetStateAction<Queen[]>>
+}
+export interface OptimizationAlgorithm {
+  execute: () => void
+}
 
 function App() {
   const [numberOfQueens, setNumberOfQueens] = useState<number>(8)
@@ -17,7 +25,6 @@ function App() {
 
   const { execute } = useHillClimb({
     queens: queens,
-    numberOfAllocatedQueens: numberOfAllocatedQueens,
     setQueens: setQueens,
   })
 
