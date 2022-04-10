@@ -101,12 +101,14 @@ export const useHillClimb: (
     let totalQueensAttacked = calculateAttackedByAll(queens)
 
     let column = parseInt((Math.random() * queens.size).toString(), 10)
-    let maxInteractions = 10000
-    let numberOfInteractions = 0
+    let maxInteractions = 100
+
+    let repeatingPositions = 0
 
     while (
       totalQueensAttacked > 0 &&
-      numberOfInteractions !== maxInteractions
+      maxInteractions > 0 &&
+      repeatingPositions < queens.size
     ) {
       let bestPositionForQueen = { ...queens.get(column)!.pos }
 
@@ -116,24 +118,28 @@ export const useHillClimb: (
 
         await updateBoard(queens)
 
-        if (numberOfInteractions / maxInteractions > 0.5) {
-          if (queens.get(column)!.attackedBy <= 1) {
-            bestPositionForQueen = { ...queens.get(column)!.pos }
-            break
-          }
-        } else {
-          if (queens.get(column)!.attackedBy === 0) {
-            bestPositionForQueen = { ...queens.get(column)!.pos }
-            break
-          }
+        let newTotalQueensAttacked = calculateAttackedByAll(queens)
+
+        if (newTotalQueensAttacked <= totalQueensAttacked) {
+          bestPositionForQueen = { ...queens.get(column)!.pos }
+          totalQueensAttacked = newTotalQueensAttacked
         }
+      }
+
+      if (queens.get(column)?.pos.row === bestPositionForQueen.row) {
+        repeatingPositions = repeatingPositions + 1
+      } else {
+        repeatingPositions = 0
       }
 
       queens = moveQueenToBestPosition(queens, column, bestPositionForQueen)
       totalQueensAttacked = calculateAttackedByAll(queens)
 
-      column = parseInt((Math.random() * queens.size).toString(), 10)
-      numberOfInteractions = numberOfInteractions + 1
+      column = column + 1
+      if (column === queens.size) {
+        column = 0
+      }
+      maxInteractions = maxInteractions - 1
 
       await updateBoard(queens)
     }
