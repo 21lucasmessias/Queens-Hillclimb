@@ -125,6 +125,7 @@ function App() {
           numberOfAllocatedQueens={numberOfAllocatedQueens}
           setNumberOfQueens={setNumberOfQueens}
           execute={execute}
+          queens={queens}
         />
 
         <Board
