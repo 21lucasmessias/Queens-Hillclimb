@@ -46,37 +46,6 @@ export const useHillClimb: (
     return newQueens
   }
 
-  const calculateAttackedBySingle = (
-    queens: Map<Column, Queen>,
-    column: number
-  ): number => {
-    const newQueen = { ...queens.get(column) }
-
-    var count = 0
-
-    for (let i = 0; i < queens.size; i++) {
-      const queenToCompare = queens.get(i)
-
-      if (queenToCompare!.pos.col === newQueen!.pos!.col) {
-        continue
-      }
-
-      if (queenToCompare!.pos.row === newQueen!.pos!.row) {
-        count++
-        continue
-      }
-
-      if (
-        Math.abs(queenToCompare!.pos.row - newQueen!.pos!.row) ===
-        Math.abs(queenToCompare!.pos.col - newQueen!.pos!.col)
-      ) {
-        count++
-      }
-    }
-
-    return count
-  }
-
   const moveQueen = (
     queens: Map<Column, Queen>,
     column: number
@@ -92,8 +61,6 @@ export const useHillClimb: (
         newQueen!.pos.row = newQueen!.pos.row + 1
       }
     }
-
-    newQueens = updateAttackedByAll(newQueens)
 
     return newQueens
   }
@@ -122,58 +89,55 @@ export const useHillClimb: (
     await delay(1)
   }
 
-  const execute = async () => {
-    let queens = updateAttackedByAll(initialQueens)
-    let totalQueensAttacked = [...queens.values()].reduce(
+  const calculateAttackedByAll = (queens: Map<Column, Queen>): number => {
+    return [...queens.values()].reduce(
       (acc, queen) => acc + queen.attackedBy,
       0
     )
+  }
 
-    let column = 0
+  const execute = async () => {
+    let queens = updateAttackedByAll(initialQueens)
+    let totalQueensAttacked = calculateAttackedByAll(queens)
 
-    let maxInteractions = 100
+    let column = parseInt((Math.random() * queens.size).toString(), 10)
+    let maxInteractions = 10000
+    let numberOfInteractions = 0
 
-    while (totalQueensAttacked > 0 && maxInteractions > 0) {
+    while (
+      totalQueensAttacked > 0 &&
+      numberOfInteractions !== maxInteractions
+    ) {
       let bestPositionForQueen = { ...queens.get(column)!.pos }
 
       for (let move = 0; move < queens.size; move++) {
         queens = moveQueen(queens, column)
+        queens = updateAttackedByAll(queens)
 
         await updateBoard(queens)
 
-        let newTotalQueensAttacked = [...queens.values()].reduce(
-          (acc, queen) => acc + queen.attackedBy,
-          0
-        )
-
-        let newTotalQueenAttacked = calculateAttackedBySingle(queens, column)
-
-        if (
-          newTotalQueensAttacked <= totalQueensAttacked ||
-          newTotalQueenAttacked < queens.get(column)!.attackedBy
-        ) {
-          bestPositionForQueen = { ...queens.get(column)!.pos }
-          totalQueensAttacked = newTotalQueensAttacked
+        if (numberOfInteractions / maxInteractions > 0.5) {
+          if (queens.get(column)!.attackedBy <= 1) {
+            bestPositionForQueen = { ...queens.get(column)!.pos }
+            break
+          }
+        } else {
+          if (queens.get(column)!.attackedBy === 0) {
+            bestPositionForQueen = { ...queens.get(column)!.pos }
+            break
+          }
         }
       }
 
       queens = moveQueenToBestPosition(queens, column, bestPositionForQueen)
-      totalQueensAttacked = [...queens.values()].reduce(
-        (acc, queen) => acc + queen.attackedBy,
-        0
-      )
+      totalQueensAttacked = calculateAttackedByAll(queens)
 
-      column = column + 1
-      if (column === queens.size) {
-        column = 0
-      }
-
-      maxInteractions = maxInteractions - 1
+      column = parseInt((Math.random() * queens.size).toString(), 10)
+      numberOfInteractions = numberOfInteractions + 1
 
       await updateBoard(queens)
     }
-
-    console.log({ totalQueensAttacked, queens })
+    await updateBoard(queens)
   }
 
   const value = useMemo(() => {
