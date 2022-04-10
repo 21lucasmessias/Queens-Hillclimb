@@ -9,12 +9,14 @@ import {
 
 interface HeaderProps {
   numberOfQueens: number
+  numberOfAllocatedQueens: number
   setNumberOfQueens: React.Dispatch<React.SetStateAction<number>>
   execute: () => void
 }
 
 export function Header({
   numberOfQueens,
+  numberOfAllocatedQueens,
   setNumberOfQueens,
   execute,
 }: HeaderProps) {
@@ -34,7 +36,12 @@ export function Header({
             color="white"
           />
         </InputGroup>
-        <Button colorScheme={'purple'} onClick={execute}>
+        <Button
+          colorScheme={'purple'}
+          onClick={() => {
+            if (numberOfQueens === numberOfAllocatedQueens) execute()
+          }}
+        >
           Hill-Climb
         </Button>
       </Flex>

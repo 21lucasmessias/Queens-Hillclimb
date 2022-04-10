@@ -35,7 +35,7 @@ export function Board({
               onClick={() => {
                 handleSquarePressed(square.pos)
               }}
-            >{`${square.pos.row}-${square.pos.col}`}</GridItem>
+            />
           ))
         )}
       </Grid>

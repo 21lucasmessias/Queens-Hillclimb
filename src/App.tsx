@@ -6,9 +6,11 @@ import { useHillClimb } from './HillClimb'
 
 import { Position, Queen, Square } from './Types'
 
+export type Column = number
+
 export interface OptimizationAlgorithmProps {
-  queens: Array<Queen>
-  setQueens: React.Dispatch<React.SetStateAction<Queen[]>>
+  queens: Map<Column, Queen>
+  setQueens: React.Dispatch<React.SetStateAction<Map<Column, Queen>>>
 }
 export interface OptimizationAlgorithm {
   execute: () => void
@@ -21,7 +23,7 @@ function App() {
 
   const [rows, setRows] = useState<Array<Array<Square>>>([])
 
-  const [queens, setQueens] = useState<Array<Queen>>([])
+  const [queens, setQueens] = useState<Map<Column, Queen>>(new Map())
 
   const { execute } = useHillClimb({
     queens: queens,
@@ -49,15 +51,16 @@ function App() {
 
       setRows(newLines)
       setNumberOfAllocatedQueens(0)
-      setQueens([])
+      setQueens(new Map())
     }
   }, [numberOfQueens])
 
   const hasQueenInColumn = (col: number) => {
-    return queens.some((queen) => queen.pos.col === col)
+    return queens.get(col)
   }
 
   const allocateQueen = ({ col, row }: Position) => {
+    console.log({ col, row })
     if (numberOfAllocatedQueens < numberOfQueens && !hasQueenInColumn(col)) {
       const newQueen: Queen = {
         pos: {
@@ -67,24 +70,29 @@ function App() {
         attackedBy: 0,
       }
 
-      setQueens([...queens, newQueen])
+      const newQueens = new Map(queens)
+      newQueens.set(col, newQueen)
+
+      setQueens(newQueens)
       setNumberOfAllocatedQueens(numberOfAllocatedQueens + 1)
     }
   }
 
   const removeQueen = ({ row, col }: Position) => {
-    const newQueens = queens.filter((queen) => {
-      return !(queen.pos.col === col && queen.pos.row === row)
-    })
+    const newQueens = new Map(queens)
 
-    setQueens(newQueens)
-    setNumberOfAllocatedQueens(numberOfAllocatedQueens - 1)
+    const queen = newQueens.get(col)
+
+    if (queen?.pos.row === row) {
+      newQueens.delete(col)
+      setQueens(newQueens)
+      setNumberOfAllocatedQueens(numberOfAllocatedQueens - 1)
+    }
   }
 
   const hasQueenInSquare = ({ row, col }: Position) => {
-    return queens.some(
-      (queen) => queen.pos.row === row && queen.pos.col === col
-    )
+    const queen = queens.get(col)
+    return queen?.pos.row === row
   }
 
   const handleSquarePressed = (position: Position) => {
@@ -114,6 +122,7 @@ function App() {
       >
         <Header
           numberOfQueens={numberOfQueens}
+          numberOfAllocatedQueens={numberOfAllocatedQueens}
           setNumberOfQueens={setNumberOfQueens}
           execute={execute}
         />
